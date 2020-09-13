@@ -1,7 +1,6 @@
 
 
 
-
 from flask import Flask, redirect, url_for, request, render_template,session
 from validatorex import Register_validator , Login_validator
 
@@ -77,110 +76,72 @@ msg=""
 
 @app.route('/')
 @app.route('/home')
-def home(): 
+def home():
+    homepage=''
+    no_images=True  
+    post_exists=False
     adminstat=False
     logstatus=False
     username=False
-    post=False
-    adminstat=False
-    cur=mysql.connection.cursor()
+    cur = mysql.connection.cursor()
 
-    try :
-
-        cur.execute( 'SELECT * FROM  UserPost ')
-        post=cur.fetchone()
-        # at this time post has just one row stored so we shouldnt have a problem dealing with that 
-        if post :
-            session['post']=post
-            session['post_title']=post['post_title']
-          # session['post_title']=post('postitle')
-            print(session['post_title'])
-            post_title=session['post_title']
-
-            # print to see  if array from database was pased to session
-            # print ("post")
-            print (session['post'])
-        # sideright=''
-        if 'loggedin' in session :
-            username=session['username']
-            logstatus=True
-            if session['status']=='admin':  
-                adminstat=session['status']
-                
-                 # the rest of the post details are in post we will do .get() in the template to get them
+    try:
         
-    # else:
-    # loggedout=False
-    #    return redirect(url_for('login'))
+        cur.execute( 'SELECT * FROM  UserPost ')
+        post=cur.fetchall()
+        if post_exists :
+            for row in post_exists:            
+                session['post_title']=row.get('post_title')
+              # session['post_title']=post('postitle')
+                post_title=session['post_title']
 
-    except mysql.connection.Error as e :
+      # sideright=''
+        if 'loggedin' in session :
+            logstatus=True
+            username=session['username']
+            adminstat=session['status']
+               
+
+    except mysql.connection.Error as e:
         print("Error reading data from MySQL table", e)
-    finally :
+    finally:
         cur.close()
-    return render_template("indexflask.html", logstatus=logstatus, adminpriv=adminstat,username=username,post=post)
+    return render_template("indexflask.html", logstatus=logstatus, adminpriv=adminstat,username=username,post=post_exists)
 
 
-@app.route('/manageblog' )
-def manageblog():
 
-    adminstat=False
-    logstatus=False
-    username=False
-   # sideright=''
-    if 'loggedin' in session :
-        logstatus=True
-        username= session['username']
-        post=session['post']
-        if session['status']=='admin':
-            adminstat=True
-            # try:
-            #     # post=cur.fetchone()
-            #     # if post :
-            #     #      # we will use this when we want to deal with more than one row that is using fetchall
-            #     #     # for row in post:  
-            #     #           # session['post_title']=row['post_title']
-            #     #     post_title=session['post_title']            
-            #   # session['post_title']=post('postitle')            
-            # except mysql.connection.Error as e:
-            #     print("Error reading data from MySQL table", e)
-            # finally:
-            #     cur.close()     
-            return render_template("blogpostedit.html", username=username, logstatus=logstatus, adminpriv=adminstat ,post=post )
-
-    return render_template("indexlayout.html", username=username, logstatus=logstatus, adminpriv=adminstat ,post=post )
 
 
 @app.route('/register' )
 def register():
-    homepage=''
-     # sideright=''
-    return render_template("register.html")
+  homepage=''
+   # sideright=''
+  return render_template("register.html")
 
 @app.route('/login' )
 def login():
-    homepage=''
+  homepage=''
    # sideright=''
-    return render_template("signin.html")
+  return render_template("signin.html")
 
 @app.route('/limitedit' )
 def limitedit():
-    homepage=''
+  homepage=''
    # sideright=''
-    return render_template("blog2edit.html")
+  return render_template("blog2edit.html")
 
 @app.route('/contactus' )
 def contactus():
-    homepage=''
     adminstat=False
     logstatus=False
     username=False
     if 'loggedin' in session :
-        logstatus=session['status']
+        logstatus=True
         username=session['username']
-
-        if session['status']=='admin':  
-            adminstat=session['status']      
-    return render_template("contact.html", logstatus=logstatus, adminpriv=adminstat, username=username)
+        if session['status']=='admin':
+            adminstat=session['status']     
+    
+    return render_template("about.html", logstatus=logstatus, adminpriv=adminstat, username=username)
 
 
 @app.route('/aboutus' )
@@ -189,124 +150,294 @@ def aboutus():
     logstatus=False
     username=False
     if 'loggedin' in session :
-        logstatus=session['status']
+        logstatus=True
         username=session['username']
-
         if session['status']=='admin':
-            adminstat=session['status']      
-    return render_template("about.html", logstatus=logstatus, adminpriv=adminstat, username=session['username'])
+          adminstat=session['status']
+
+      
+    return render_template("about.html", logstatus=logstatus, adminpriv=adminstat, username=username)
     
+  
+# serves as some kinda of admin for the owners of the blog
+@app.route('/manageblog' )
+def manageblog():
+    homepage=''
+    post=""
+    adminstat=False
+    logstatus=False
+    username=False
+   # sideright=''
+    if 'loggedin' in session :
+        logstatus=True
+        username= session['username']
+        adminstat=session['status']
+        cur= mysql.connection.cursor()
+        if session['status']=='admin':
+            try:
+                
+                post=cur.fetchone()
+                if post :
+                    for row in post:
+                  
+                        session['post_title']=row.get('post_title')  
+                        post_title=session['post_title']            
+          
+
+              # session['post_title']=post('postitle')
+                 
+          
+          
+        
+            except mysql.connection.Error as e:
+                print("Error reading data from MySQL table", e)
+            finally:
+                cur.close() 
+
+    
+        return render_template("blogpostedit.html", username=username, logstatus=logstatus, adminpriv=adminstat ,post=post )
+
+    return render_template("indexlayout.html", username=username, logstatus=logstatus, adminpriv=adminstat ,post=post )    
+
+
 
 
 
 
 @app.route('/useradmin', methods=['POST','GET'])
-def updateblog():
-    post_exist=False
-
-    if session['status']=='admin':
-        
-        msg=''
-
-        if request.method == 'POST':        
-          
-            image=request.files['bpicture']
-            title=request.form.get('post_title')
-            pgraph1=request.form.get('pgraph1')
-            pgraph2=request.form.get('pgraph2')
-            pgraph3=request.form.get('pgraph3')
-            qoute=request.form.get('qoute')
-            qoute_ref=request.form.get('qoute_ref')
-            pgraph6=request.form.get('pgraph6')
-            pgraph7=request.form.get('pgraph7')
-
-            dateuser='January 1,2017'
-            timeuser= '12:00 PM'
-
-            # blogcomments=request.form.get('blogcomments')
-            # get username from session base at the top and add 
-            useremail= session['email']
-            username= session['username']
-            filename=image.filename
-            image.save('./static/images/uploads/'+filename)
-            imagesavd= True
-
-            cur=mysql.connection.cursor()
-
-            if imagesavd :
-
-                try :
-
-                    post_title=session['post_title']
-
-                    # i can use the comment below to change the session values of post_title which it got from searching early it would find that
-                    # that information does not exist it would be great for passing different blog title for insertion 
-                              # ||
-                              # \/
-                    # post_title='crazy banana'
-
-                    print(post_title)
-                    cur=mysql.connection.cursor()
-                    cur.execute( 'SELECT * FROM  UserPost WHERE post_title=%s ', ( post_title , ))
-                    post_exist=cur.fetchone()
-                    
-
-                    if post_exist :
-                        print("This is output for for post_exist below ")
-                        print(post_exist)
-                      # if the title exists then update info
-                        cur.execute("""UPDATE UserPost 
-                        SET username=%s, useremail=%s, post_title=%s, 
-                        post_image=%s, par1=%s , 
-                        par2=%s, par3=%s, qoute=%s,
-                        qoute_reference=%s, par6=%s,
-                        par7=%s, dateuser=%s, timeuser=%s  
-                         WHERE post_title=%s
-                         """, ( username, useremail, title, image, pgraph1, pgraph2, pgraph3, qoute, qoute_ref, pgraph6, pgraph7, dateuser, timeuser, post_title))
-
-                        mysql.connection.commit()
-                        
-                        return print(cur.rowcount, "Record updated.")
-
-                        # if title does not exist 
-                    else:
-                        cur.execute( """INSERT INTO UserPost ( username, useremail, post_title, post_image, par1, par2, par3, qoute, qoute_reference, par6, par7, dateuser, timeuser )
-                          VALUES (%s, %s , %s , %s , %s, %s , %s , %s, %s, %s , %s , %s , %s )
-                          """,(username , useremail, title, image, pgraph1, pgraph2, pgraph3, qoute, qoute_ref , pgraph6 , pgraph7,dateuser,timeuser ) )
-
-                        
-
-                        mysql.connection.commit()
-                        print(cur.rowcount, "Record inserted.")
-
-                        # else :
-                        #     msg='Image not saved successful,Record not updated'
-                        #     print("Record not updated.")
-
-                      # manage blog will be here to load data 
-                    
-
-                        # i need these comments below to absorb any errors so users dont experience mysql errors 
-                # except mysql.connection.Error as e:
-                #     print("Error reading data from MySQL table")
-                #     msg='Image not saved successful,Record not updated'
-                #     print("Record not updated.")
-                  
-                finally:  
-                    cur.close()
-          
-                return redirect(url_for('manageblog'))
-        else:
-          # POST not successfull
-            msg='Image not saved successful'
-            print("Image not saved successful, to advanced to stage of saving records")
-            return redirect(url_for('manageblog'))
-
-      
-    return redirect(url_for('home'))
+def useradmin():
   
 
+      if session['status']=='admin':
+        
+            msg=''
 
+            if request.method == 'POST':        
+              
+                  image=request.files['bpicture']
+                  title=request.form.get('post_title')
+                  pgraph1=request.form.get('pgraph1')
+                  pgraph2=request.form.get('pgraph2')
+                  pgraph3=request.form.get('pgraph3')
+                  qoute=request.form.get('qoute')
+                  qoute_ref=request.form.get('qoute_ref')
+                  pgraph6=request.form.get('pgraph6')
+                  pgraph7=request.form.get('pgraph7')
+
+                  dateuser='January 1,2017'
+                  timeuser= '12:00 PM'
+
+                  # blogcomments=request.form.get('blogcomments')
+                  # get username from session base at the top and add 
+                  useremail= session['email']
+                  username= session['username']
+                  filename=image.filename
+                  image.save('./static/images/uploads/'+filename)
+                  imagesavdsucesful= True
+
+                  cur = mysql.connection.cursor()
+
+                  if imagesavdsucesful :
+
+                      try:
+
+                        post_title=session['post_title']
+                        
+                        cur.execute( 'SELECT * FROM  UserPost WHERE post_title=%s ', ( post_title , ))
+                        post_exist=cur.fetchone()
+
+                        if post_exist:
+                          # if the title exists then update info
+                            cur.execute("UPDATE albums SET username=%s, useremail=%s, post_title=%s, post_image=%s, par1=%s , par2=%s , par3%s , qoute=%s , qoute_reference=%s , par6=%s ,par7=%s, timeuser=%s ,post_title=%s WHERE post_title=%s", ( username , useremail, title, image , post_title, pgraph1, pgraph2, pgraph3, qoute, qoute_ref , pgraph6 , pgraph7 ,post_title  ) )
+
+                            mysql.connection.commit()
+                        
+                            print(cur.rowcount, "Record updated.")
+
+                        else:
+                            sql = "INSERT INTO UserPost (username , useremail, post_title, post_image , par1 ,par2 , par3 , qoute , qoute_reference ,par6 , par7 , dateuser , timeuser )VALUES (%s, %s , %s , %s , %s, %s , %s , %s, %s, %s , %s , %s , %s )"
+                            val=(username , useremail, title, image, pgraph1, pgraph2, pgraph3, qoute, qoute_ref , pgraph6 , pgraph7,dateuser,timeuser )
+
+                            cur.execute(sql, val)
+
+                            done=mysql.connection.commit()
+                            if done:
+                                print(cur.rowcount, "Record inserted.")
+
+                            else:
+                                msg='Image not saved successful,Record not updated'
+                                print("Record not updated.")
+
+                          # manage blog will be here to load data 
+                        return redirect(url_for('manageblog'))
+
+
+                      except mysql.connection.Error as e:
+                          print("Error reading data from MySQL table")
+                          msg='Image not saved successful,Record not updated'
+                          print("Record not updated.")
+                        
+                      finally:  
+                          cur.close()
+              
+
+            else:
+              # POST not successfull
+                msg='Image not saved successful'
+                print("Image not saved successful, to advanced to stage of saving records")
+                return redirect(url_for('manageblog'))
+
+        
+      return redirect(url_for('home'))
+
+
+
+# @app.route('/adminfunc', methods=['POST','GET'])
+# def adminfunc():
+
+#   msg=''
+
+#   if request.method == 'POST':
+#     image=request.files['bpicture']
+#     title=request.form.get('blogtitle')
+#     blogcomments=request.form.get('blogcomments')
+
+#     username='kobby'
+#     filename=image.filename
+#     image.save('./static/imgs/uploads/'+filename)
+#     imagesavdsucesful= True
+
+#     if imagesavdsucesful :
+
+#       cur = mysql.connection.cursor()
+
+#       sql = "INSERT INTO Blogtable (title,blogcomments,username,image)VALUES (%s, %s , %s,%s)"
+#       val=(title,blogcomments,username,filename)
+
+#       cur.execute(sql, val)
+
+#       mysql.connection.commit()
+
+#       print(cur.rowcount, "Record inserted.")
+
+#     else:
+#       msg='Image not saved successful'
+#       print("Record not inserted.")
+
+# #these are outside they post so they work with the automatic get request
+#   # cur = mysql.connection.cursor()
+#   # cur.execute( 'SELECT * FROM  Blogtable')
+#   # blogdetails=cur.fetchall()
+
+#   return render_template('admin.html')
+
+
+# @app.route('/signupblog' )
+# def signupblog():
+
+#    # sideright=''
+#   return render_template("signupblog.html")
+
+# @app.route('/loginblog' )
+# def loginblog():
+
+#    # sideright=''
+#   return render_template("loginblog.html")
+
+
+
+
+
+
+
+# @app.route('/contactblog' )
+# def contactblog():
+#   contactpage=''
+#   if 'loggedin' in session :
+#     displaynoemail=True
+#     return render_template("contactblog.html",contactpage=contactpage,display='displaynoemail')
+#    # sideright=''
+#   return render_template("contactblog.html", contactpage=contactpage)
+
+
+# @app.route('/userfunc',methods = ['POST', 'GET'])
+# def userfunc():
+
+#   if 'email' in session :
+
+#     emailmsg=session['email']
+#     # return render_template("contactblog.html",display='displaynoemail')
+ 
+
+#   if request.method == 'POST':
+    
+#     message=request.form.get('msg')
+#     usertype='Normal'
+    
+#     if 'email' in session :
+#       usertype='Priority'
+#     else  :
+#       emailmsg=request.form.get('email')
+
+
+      
+    
+#     if emailmsg :
+#       cur = mysql.connection.cursor()
+#       sql = "INSERT INTO UserMessages (UserType,UserEmail,Message)VALUES (%s,%s,%s)"
+#       val=(usertype,emailmsg,message)
+
+#       cur.execute(sql, val)
+
+#       mysql.connection.commit()
+
+#       print(cur.rowcount, "record inserted.")
+#       # any sending of mail to me  will be done here 
+#       loginmail='rodneytetteh@gmail.com'
+#       user = 'rodneytetteh@gmail.com'
+
+#       # insert app_password here in the future instead of describing it at the beginning
+
+#       host = 'smtp.gmail.com'
+#       port = 465
+#       to = 'jedikwao@gmail.com'
+
+#       # subject = 'Moro Blog Comments  Sent from   '+ emailmsg
+#       subject = 'Moro Blog Comments '
+#       # message main content 
+#       content = message +'\n'+'Sent by\n ' + emailmsg
+      
+
+#       ### Define email ###
+#       message = MIMEMultipart()
+#       # add From 
+#       message['From'] = Header(user)
+#       # add To
+#       message['To'] = Header(to)     
+#       # add Subject
+#       message['Subject'] = Header(subject)
+#       # add content text
+#       message.attach(MIMEText(content, 'plain', 'utf-8'))
+          
+#       ### Send email ###
+#       server = smtplib.SMTP_SSL(host, port) 
+#       server.login(loginmail, app_password)
+#       server.sendmail(user, to, message.as_string()) 
+#       server.quit() 
+#       print('Sent email successfully')
+            
+
+
+
+#   return redirect(url_for('contactblog'))
+
+
+
+# @app.route('/aboutinsert')
+# def aboutinsert():
+#    sideright=''
+#    aboutpage=''
+#    return render_template("aboutinsert.html",aboutpage=aboutpage)
 
 
 @app.route('/regfunc',methods = ['POST', 'GET'])
@@ -549,14 +680,11 @@ def logout():
    session.pop('loggedin', None)
    session.pop('id', None)
    session.pop('username', None)
+
+   session.pop('adminpriv', None)
+
    session.pop('email', None)
    session.pop('status',None)
-   session.pop('adminpriv', None)
-   session.pop('post',None)
-   session.pop('post_title',None)
-
-   
-   
    # Redirect to login page
    return redirect(url_for('home'))
 
